@@ -2,8 +2,6 @@
 #-*- coding: UTF-8 -*- 
 import sys
 sys.path.append('tools/')
-import numpy as np
-import pandas as pd
 from IO import *
 import lxml.etree
 
@@ -11,8 +9,8 @@ import lxml.etree
 def loadData(dataPath, goldPath=None, goldYNPath=None) :
     assert ((goldPath is None) is (goldYNPath is None))
     if not goldPath is None :
-        goldPath = {line.split('\t')[0]:line.split('\t')[1] for line in loadLists(goldPath,ignoreEndingLength=2)}
-        goldYNPath = {line.split('\t')[0]:line.split('\t')[1] for line in loadLists(goldYNPath,ignoreEndingLength=2)}
+        goldPath = {line.split('\t')[0]:line.split('\t')[1] for line in loadLists(goldPath,convert=lambda x:x.strip())}
+        goldYNPath = {line.split('\t')[0]:line.split('\t')[1] for line in loadLists(goldYNPath,convert=lambda x:x.strip())}
 
     doc = lxml.etree.parse(dataPath)
     Questions = []
@@ -35,7 +33,7 @@ def loadData(dataPath, goldPath=None, goldYNPath=None) :
             comment_t['CUSERID']  = comment.xpath('@CUSERID')[0]
             comment_t['CSubject'] = comment.xpath('CSubject/text()')[0]
             comment_t['CBody']    = comment.xpath('CBody/text()')[0]
-            comment_t['CGOLD_YN'] = comment.xpath('@CGOLD_YN')[0] if goldPath is None else goldPath[comment_t['CID']]
+            comment_t['CGOLD'] = comment.xpath('@CGOLD')[0] if goldPath is None else goldPath[comment_t['CID']]
             comment_all.append(comment_t)
         Question_t['comments'] = comment_all
         

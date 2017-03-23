@@ -125,6 +125,8 @@ def list2dict(listName, mainKey) :
     for list_i in listName :
         retDict[list_i[mainKey]] = list_i
     return retDict
+def dict2list(dictName) :
+    return [dictName[key] for key in dictName.keys()]
 # input
 def loadLists(filename, convert=None, retTypeSet=False, ignoreEndingLength=1, ignoreFirstLine=False) :
     input = codecs.open(filename, encoding='utf-8')

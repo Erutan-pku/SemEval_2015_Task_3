@@ -4,4 +4,4 @@
 .gitignore
 *.pyc
 xgboost
-libsvm-master 
+libsvm 

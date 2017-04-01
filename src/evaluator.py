@@ -4,6 +4,41 @@ import sys
 sys.path.append('tools/')
 from IO import *
 
+def loadSVMResult_A(rawFile, resultFile) :
+    labelList = ['Good', 'Bad', 'Potential', 'Dialogue', 'Not English', 'Other', 'direct', 'related', 'irrelevant']
+    labelList_r = {label:index for index, label in enumerate(labelList)}
+
+    data = loadListofDict(rawFile, output_type='list')
+    CID_list = []
+    for question in data :
+        for comment in question['comments'] :
+            CID_list.append(comment['CID'])
+    labels = loadLists(resultFile, convert=int)
+
+    assert len(CID_list) == len(labels)
+    ret_dict = {CID_list[i]:labelList[labels[i]] for i in range(len(labels))}
+    
+    return ret_dict
+
+def loadSVMResult_B(rawFile, resultFile) :
+    labelList = ['Yes', 'No', 'Unsure']
+    labelList_r = {label:index for index, label in enumerate(labelList)}
+
+    data = loadListofDict(rawFile, output_type='list')
+    QID_list = []
+    for question in data :
+        if not question['QTYPE'] == 'YES_NO' :
+            continue
+        QID_list.append(question['QID'])
+    labels = loadLists(resultFile, convert=int)
+
+    assert len(QID_list) == len(labels)
+    ret_dict = {QID_list[i]:labelList[labels[i]] for i in range(len(labels))}
+    
+    return ret_dict
+
+    
+
 """
 QGOLD_YN and CGOLD should be dicts
 #"""
@@ -49,8 +84,14 @@ def evaluator(data, QGOLD_YN=None, CGOLD=None):
     recall      = lambda r : 0.0 if r['TP'] == 0 else r['TP']*100.0/(r['TP']+r['FN'])
     F1_Score    = lambda p, r : 0.0 if p * r == 0 else 2.0 * p * r / (p + r) 
 
-    macro_F1_Q = average([F1_Score(precision(r), recall(r)) for r in dict2list(QGOLD_YN_count)])
-    macro_F1_C = average([F1_Score(precision(r), recall(r)) for r in dict2list(CGOLD_count)])
+    macro_p_Q  = average([precision(r) for r in dictValueList(QGOLD_YN_count)])
+    macro_r_Q  = average([recall(r) for r in dictValueList(QGOLD_YN_count)])
+    macro_F1_Q = 2 / (1/macro_p_Q + 1/macro_r_Q)
+    macro_p_C  = average([precision(r) for r in dictValueList(CGOLD_count)])
+    macro_r_C  = average([recall(r) for r in dictValueList(CGOLD_count)])
+    macro_F1_C = 2 / (1/macro_p_C + 1/macro_r_C)
+    print CGOLD_count
+    print QGOLD_YN_count
 
     detail = {
         'Qlength':Qlength,
@@ -60,10 +101,15 @@ def evaluator(data, QGOLD_YN=None, CGOLD=None):
         'QGOLD_YN_count':QGOLD_YN_count,
         'CGOLD_count':CGOLD_count
     }
-    result = {'macro_F1_Q':macro_F1_Q, 'macro_F1_C':macro_F1_C, 'Acc_Q':Acc_Q, 'Acc_C':Acc_C, 'detail':detail}
+    f1_c = [F1_Score(precision(r), recall(r)) for r in dictValueList(CGOLD_count)]
+    f1_q = [F1_Score(precision(r), recall(r)) for r in dictValueList(QGOLD_YN_count)]
+    detail_f1 = {
+        'f1_c':f1_c,
+        'f1_q':f1_q
+    }
+    result = {'macro_F1_Q':macro_F1_Q, 'macro_F1_C':macro_F1_C, 'Acc_Q':Acc_Q, 'Acc_C':Acc_C, 'detail':detail_f1} #
     return result
 
-# Used to test the 'all good' baseLine
 def labelAllGood(data, QGOLD_YN=None, CGOLD=None) :
     convert = {
         'Good':'Good',
@@ -87,6 +133,7 @@ def labelAllGood(data, QGOLD_YN=None, CGOLD=None) :
             #"""
     return data
 
+# Used to test the 'all good' baseLine
 if __name__ == '__main__':
     trn_data = loadListofDict('../data/train.json', output_type='list')
     dev_data = loadListofDict('../data/dev.json', output_type='list')

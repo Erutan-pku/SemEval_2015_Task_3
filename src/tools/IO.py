@@ -74,6 +74,36 @@ class W2V :
             ret.append(self.i2v[i])
         return np.array(ret)
 
+# not finished
+#counter
+class Counter :
+    count_hash = {}
+    def __init__(self, dict_in={}, listStart=1) :
+        assert type(dict_in) in [list, dict]
+        if type(dict_in) is dict :
+            self.count_hash = dict_in
+        elif type(dict_in) is list :
+            self.count_hash = {}
+            for i, num in enumerate(dict_in) :
+                self.count_hash[i + listStart] = num
+    def count(self, name, value = 1) :
+        if not name in self.count_hash :
+            self.count_hash[name] = 0
+        self.count_hash[name] += value
+    def combine(self, another) :
+        assert isinstance(another, Counter)
+        for key in another.count_hash :
+            if not key in self.count_hash :
+                self.count_hash[key] = 0
+            self.count_hash[name] += another[key]
+
+# tools
+def combineCountDict(base, add) :
+    for key in add.keys() :
+        if not key in base :
+            base[key] = 0
+        base[key] += add[key]
+
 # deal
 def list2line(inputList, split=u' ', convert=unicode) :
     ret = u''
@@ -121,12 +151,15 @@ def strB2Q(ustring):
         rstring += unichr(inside_code)
     return rstring
 def list2dict(listName, mainKey) :
+    # list of json 2 dict
     retDict = {}
     for list_i in listName :
         retDict[list_i[mainKey]] = list_i
     return retDict
-def dict2list(dictName) :
+def dictValueList(dictName) :
     return [dictName[key] for key in dictName.keys()]
+def dict2list(dictName) :
+    return [[key, dictName[key]] for key in dictName.keys()]
 # input
 def loadLists(filename, convert=None, retTypeSet=False, ignoreEndingLength=1, ignoreFirstLine=False) :
     input = codecs.open(filename, encoding='utf-8')
